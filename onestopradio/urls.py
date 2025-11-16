@@ -23,6 +23,7 @@ urlpatterns = [
     path('api/v1/streams/', include('streams.urls')),
     path('api/v1/social/', include('social_media.urls')),
     path('api/v1/music/', include('music.urls')),
+    path('', include('realtime_dj.urls')),  # DJ real-time endpoints
     
     # Health check
     path('api/health/', include('onestopradio.health_urls')),

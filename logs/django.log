@@ -7,3 +7,20 @@ Watching for file changes with StatReloader
 Watching for file changes with StatReloader
 Watching for file changes with StatReloader
 Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+Not Found: /api/realtime-dj/sessions/
+"GET /api/realtime-dj/sessions/ HTTP/1.1" 404 3503
+Unauthorized: /api/v1/dj/sessions/
+"GET /api/v1/dj/sessions/ HTTP/1.1" 401 58
+"GET /api/health/ HTTP/1.1" 200 162
+"HEAD /api/docs/ HTTP/1.1" 200 0
+/Users/gregorygrant/Desktop/Websites/mutiple backend projects/onestopradio/backend-py/onestopradio/settings.py changed, reloading.
+Watching for file changes with StatReloader
+/Users/gregorygrant/Desktop/Websites/mutiple backend projects/onestopradio/backend-py/onestopradio/settings.py changed, reloading.
+Watching for file changes with StatReloader
+/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/django/contrib/admin/actions.py changed, reloading.
+Watching for file changes with StatReloader
+/Users/gregorygrant/Desktop/Websites/mutiple backend projects/onestopradio/backend-py/onestopradio/settings.py changed, reloading.
+Watching for file changes with StatReloader
+/Users/gregorygrant/Desktop/Websites/mutiple backend projects/onestopradio/backend-py/realtime_dj/views.py changed, reloading.
+Watching for file changes with StatReloader

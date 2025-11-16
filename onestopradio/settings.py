@@ -16,7 +16,7 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-in-production-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=lambda v: [s.strip() for s in v.split(',')])
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,backend-py-production-2c1b.up.railway.app', cast=lambda v: [s.strip() for s in v.split(',')])
 
 # Application definition
 DJANGO_APPS = [
@@ -33,6 +33,8 @@ THIRD_PARTY_APPS = [
     'rest_framework_simplejwt',
     'corsheaders',
     'drf_spectacular',
+    'channels',
+    # 'social_django',  # TODO: Add back with UUID-compatible migration
 ]
 
 LOCAL_APPS = [
@@ -41,6 +43,7 @@ LOCAL_APPS = [
     'streams',
     'social_media',
     'music',
+    'realtime_dj',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -76,14 +79,37 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'onestopradio.wsgi.application'
+ASGI_APPLICATION = 'onestopradio.asgi.application'
 
 # Database
 import dj_database_url
 
+# Parse database URL and add PostgreSQL optimizations
+default_database_config = dj_database_url.parse(
+    config('DATABASE_URL', default='postgresql://postgres:JLiWeljtTNmpmimgYJVzLhgBRBQZsqcJ@metro.proxy.rlwy.net:14967/railway')
+)
+
+# Add PostgreSQL-specific optimizations
+default_database_config.update({
+    'ENGINE': 'django.db.backends.postgresql',
+    'CONN_MAX_AGE': config('DB_CONN_MAX_AGE', default=600, cast=int),  # Connection pooling
+    'CONN_HEALTH_CHECKS': config('DB_CONN_HEALTH_CHECKS', default=True, cast=bool),
+    'DISABLE_SERVER_SIDE_CURSORS': config('DB_DISABLE_SERVER_SIDE_CURSORS', default=False, cast=bool),
+    'OPTIONS': {
+        'connect_timeout': 10,
+        'keepalives_idle': 600,
+        'keepalives_interval': 30,
+        'keepalives_count': 3,
+        'application_name': 'onestopradio_django',
+        'sslmode': 'prefer',  # Use SSL if available
+    },
+    'TEST': {
+        'NAME': 'test_' + default_database_config.get('NAME', 'railway'),
+    }
+})
+
 DATABASES = {
-    'default': dj_database_url.parse(
-        config('DATABASE_URL', default='postgresql://postgres:JLiWeljtTNmpmimgYJVzLhgBRBQZsqcJ@metro.proxy.rlwy.net:14967/railway')
-    )
+    'default': default_database_config
 }
 
 # Custom User Model
@@ -136,6 +162,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5000",  # Node.js signaling
     "http://127.0.0.1:3000",
     "https://onestopradio.up.railway.app",  # Production frontend
+    "https://backend-py-production-2c1b.up.railway.app",  # Django backend
 ]
 
 CORS_ALLOW_CREDENTIALS = True
@@ -205,3 +232,53 @@ LOGGING = {
 
 # Create logs directory
 os.makedirs(BASE_DIR / 'logs', exist_ok=True)
+
+# Django Channels Configuration
+REDIS_URL = config('REDIS_URL', default='redis://localhost:6379')
+
+if DEBUG:
+    # Use in-memory for development
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        },
+    }
+else:
+    # Use Redis for production
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels_redis.core.RedisChannelLayer',
+            'CONFIG': {
+                'hosts': [REDIS_URL],
+            },
+        },
+    }
+
+# Celery Configuration (for background tasks)
+CELERY_BROKER_URL = REDIS_URL
+CELERY_RESULT_BACKEND = REDIS_URL
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+
+# PostgreSQL Performance Settings
+if not DEBUG:
+    # Production database optimizations
+    DATABASES['default']['OPTIONS'].update({
+        'MAX_CONNS': 20,
+        'AUTOCOMMIT': True,
+        'ATOMIC_REQUESTS': False,
+        'server_side_binding': True,
+    })
+
+# Database Health Check Settings
+DB_HEALTH_CHECK_ENABLED = config('DB_HEALTH_CHECK_ENABLED', default=True, cast=bool)
+DB_CONNECTION_RETRY_ATTEMPTS = config('DB_CONNECTION_RETRY_ATTEMPTS', default=3, cast=int)
+DB_CONNECTION_RETRY_DELAY = config('DB_CONNECTION_RETRY_DELAY', default=1, cast=int)
+
+# Real-time DJ Configuration
+DJ_AUDIO_SAMPLE_RATE = 48000
+DJ_AUDIO_BUFFER_SIZE = 1024
+DJ_MAX_CONCURRENT_SESSIONS = 100
+DJ_SESSION_TIMEOUT_MINUTES = 60
